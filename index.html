@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ujian Kuis</title>
+<style>
+:root{--bg:#eef1f4;--sf:#fff;--tx:#14213d;--mu:#5d6778;--bd:#cfd6df;--hi:#f2b705;--bad:#b42318;--ok:#1a7f45;color-scheme:light dark}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1420;--sf:#172033;--tx:#e8ecf3;--mu:#9aa5b8;--bd:#2c384f;--bad:#ff7b6e;--ok:#4cc98a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+main{max-width:640px;margin:0 auto;padding:20px 16px 40px}
+h1{font:700 1.5rem/1.2 Georgia,serif;margin:0 0 4px}
+.sub{color:var(--mu);margin:0 0 12px}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:12px}
+label{display:block;font-size:.85rem;color:var(--mu);margin:10px 0 4px}
+input[type=text],input[type=email]{width:100%;font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:10px}
+button{font:inherit;font-weight:600;border:0;border-radius:8px;padding:12px 16px;cursor:pointer;background:var(--tx);color:var(--bg)}
+button.pri{background:var(--hi);color:#14213d}
+button:disabled{opacity:.45}
+button:focus-visible,input:focus-visible{outline:3px solid var(--hi);outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.err{color:var(--bad);font-size:.9rem;min-height:1.3em;margin-top:8px}
+.no{font:700 2.2rem/1 Georgia,serif;margin:6px 0}
+#exam{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.bar{height:6px;background:var(--bd);border-radius:3px;overflow:hidden;margin:8px 0 18px}
+.bar i{display:block;height:100%;background:var(--hi)}
+.qtext{font:600 1.25rem/1.4 Georgia,serif;margin:0 0 16px}
+.ch{display:block;width:100%;text-align:left;background:var(--sf);color:var(--tx);border:2px solid var(--bd);margin-bottom:10px;font-weight:500}
+.ch[aria-pressed="true"]{border-color:var(--hi);background:var(--hi);color:#14213d;font-weight:700}
+.score{font:700 3.2rem/1 Georgia,serif;margin:6px 0}
+.r{padding:10px 0;border-bottom:1px solid var(--bd)}
+.r:last-child{border:0}
+.ok{color:var(--ok);font-weight:700}.no2{color:var(--bad);font-weight:700}
+.fail{border-color:var(--bad)}
+ul.n{padding-left:18px;margin:6px 0}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+
+<section id="reg">
+  <h1>Ujian kuis</h1>
+  <p class="sub">Isi data dirimu dengan benar. Nomor peserta diberikan otomatis.</p>
+  <div class="card">
+    <label for="nama">Nama asli</label>
+    <input type="text" id="nama" autocomplete="name">
+    <label for="email">Alamat email (Gmail)</label>
+    <input type="email" id="email" autocomplete="email">
+    <div class="err" id="rerr" role="alert"></div>
+    <div class="row"><button class="pri" id="daftar">Daftar</button></div>
+  </div>
+  <div class="card">
+    <b>Aturan ujian</b>
+    <ul class="n">
+      <li>Ujian berjalan di layar penuh. Jangan buka aplikasi atau tab lain.</li>
+      <li>Jika kamu keluar, ujian dibatalkan dan harus diulang dari soal pertama.</li>
+      <li>Menutup atau memuat ulang halaman juga mengulang ujian dari awal.</li>
+      <li>Salin, tempel, dan klik kanan dinonaktifkan.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="ready" hidden>
+  <h1>Pendaftaran berhasil</h1>
+  <div class="card">
+    <div class="sub">Nomor pesertamu</div>
+    <div class="no" id="nomor"></div>
+    <p class="sub" id="who"></p>
+    <p class="sub" id="jml"></p>
+  </div>
+  <button class="pri" id="mulai">Mulai!</button>
+</section>
+
+<section id="exam" hidden>
+  <p class="sub" id="prog"></p>
+  <div class="bar"><i id="fill"></i></div>
+  <p class="qtext" id="qtext"></p>
+  <div id="choices"></div>
+  <div class="row"><button class="pri" id="next" disabled>Lanjut</button></div>
+</section>
+
+<section id="result" hidden>
+  <h1>Ujian selesai</h1>
+  <div class="card">
+    <div class="sub">Skor kamu (maksimum 10.000)</div>
+    <div class="score" id="score"></div>
+    <p class="sub" id="bs"></p>
+  </div>
+  <div class="card">
+    <b>Catatan</b>
+    <ul class="n">
+      <li>Hadiah akan diinformasikan lewat Gmail yang kamu daftarkan.</li>
+      <li>Kamu sudah boleh keluar dari halaman ini.</li>
+    </ul>
+  </div>
+  <div class="card"><b>Jawaban benar dan salah</b><div id="rev"></div></div>
+  <button id="exit">Keluar</button>
+</section>
+
+<section id="fail" hidden>
+  <h1>Ujian dibatalkan</h1>
+  <div class="card fail"><p id="reason"></p><p class="sub">Daftar lagi dengan email yang sama untuk mengulang dari soal pertama. Nomor pesertamu tetap sama.</p></div>
+  <button id="again">Kembali</button>
+</section>
+
+<section id="bye" hidden>
+  <h1>Terima kasih</h1>
+  <p class="sub">Kamu boleh menutup halaman ini.</p>
+</section>
+
+</main>
+<script>
+(function(){
+  var K={soal:"kuis:soal",pes:"kuis:peserta",cnt:"kuis:counter",act:"kuis:aktif"};
+  var $=function(i){return document.getElementById(i)};
+  function get(k,d){try{var r=localStorage.getItem(k);return r?JSON.parse(r):d}catch(e){return d}}
+  function put(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+  function esc(s){var d=document.createElement("div");d.textContent=s==null?"":String(s);return d.innerHTML}
+  function show(id){["reg","ready","exam","result","fail","bye"].forEach(function(s){$(s).hidden=(s!==id)});window.scrollTo(0,0)}
+  function upd(no,fn){var ps=get(K.pes,[]);for(var i=0;i<ps.length;i++)if(ps[i].no===no){fn(ps[i]);break}put(K.pes,ps)}
+  function setAct(on,no){try{on?localStorage.setItem(K.act,no):localStorage.removeItem(K.act)}catch(e){}}
+
+  var qs=[], me="", idx=0, ans=[], exam=false, grace=0;
+
+  $("daftar").onclick=function(){
+    var n=$("nama").value.trim().replace(/\s+/g," "), m=$("email").value.trim().toLowerCase();
+    if(n.length<3){$("rerr").textContent="Tulis nama aslimu dengan lengkap.";return}
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m)){$("rerr").textContent="Alamat email belum valid.";return}
+    qs=get(K.soal,[]);
+    if(!qs.length){$("rerr").textContent="Soal belum tersedia. Hubungi penyelenggara.";return}
+    var ps=get(K.pes,[]), p=null;
+    for(var i=0;i<ps.length;i++)if(ps[i].email===m)p=ps[i];
+    if(p&&p.status==="Selesai"){$("rerr").textContent="Email ini sudah menyelesaikan ujian dan tidak bisa mengulang.";return}
+    if(p){p.nama=n}
+    else{
+      var c=(get(K.cnt,0)||0)+1;put(K.cnt,c);
+      p={no:"P-"+("000"+c).slice(-4),nama:n,email:m,status:"Terdaftar",skor:null,benar:null,salah:null,percobaan:0,waktu:"",catatan:""};
+      ps.push(p);
+    }
+    put(K.pes,ps);me=p.no;$("rerr").textContent="";
+    $("nomor").textContent=p.no;
+    $("who").textContent=p.nama+" ("+p.email+")";
+    $("jml").textContent="Jumlah soal: "+qs.length+". Tekan Mulai! saat kamu siap.";
+    show("ready");
+  };
+
+  function leaveFs(){try{if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen()}catch(e){}}
+
+  $("mulai").onclick=function(){
+    idx=0;ans=[];exam=true;grace=Date.now()+1200;setAct(true,me);
+    upd(me,function(p){p.status="Mengerjakan";p.percobaan=(p.percobaan||0)+1});
+    show("exam");renderQ();
+    try{var el=document.documentElement;if(el.requestFullscreen){var pr=el.requestFullscreen();if(pr&&pr.catch)pr.catch(function(){})}}catch(e){}
+  };
+
+  function renderQ(){
+    var x=qs[idx];
+    $("prog").textContent="Soal "+(idx+1)+" dari "+qs.length;
+    $("fill").style.width=(idx/qs.length*100)+"%";
+    $("qtext").textContent=x.q;
+    $("choices").innerHTML=x.o.map(function(o,i){return '<button class="ch" aria-pressed="false" data-i="'+i+'">'+esc(o)+'</button>'}).join("");
+    $("next").disabled=true;
+    $("next").textContent=(idx===qs.length-1)?"Kirim jawaban":"Lanjut";
+  }
+  $("choices").onclick=function(e){
+    var b=e.target.closest(".ch");if(!b)return;
+    ans[idx]=+b.getAttribute("data-i");
+    var all=$("choices").querySelectorAll(".ch");
+    for(var i=0;i<all.length;i++)all[i].setAttribute("aria-pressed",String(all[i]===b));
+    $("next").disabled=false;
+  };
+  $("next").onclick=function(){if(idx<qs.length-1){idx++;renderQ()}else finish()};
+
+  function finish(){
+    exam=false;setAct(false);leaveFs();
+    var b=0,html="";
+    for(var i=0;i<qs.length;i++){
+      var ok=(ans[i]===qs[i].a);if(ok)b++;
+      html+='<div class="r"><div>'+(i+1)+'. '+esc(qs[i].q)+'</div><div class="'+(ok?"ok":"no2")+'">'+(ok?"Benar":"Salah")+'</div><div class="sub" style="margin:0">Jawabanmu: '+esc(qs[i].o[ans[i]])+(ok?"":" | Jawaban benar: "+esc(qs[i].o[qs[i].a]))+'</div></div>';
+    }
+    var skor=Math.round(b/qs.length*10000), s=qs.length-b;
+    upd(me,function(p){p.status="Selesai";p.skor=skor;p.benar=b;p.salah=s;p.waktu=new Date().toLocaleString("id-ID");p.catatan=""});
+    $("score").textContent=skor.toLocaleString("id-ID");
+    $("bs").textContent=b+" benar, "+s+" salah dari "+qs.length+" soal.";
+    $("rev").innerHTML=html;
+    show("result");
+  }
+  function fail(reason){
+    if(!exam)return;
+    exam=false;setAct(false);leaveFs();
+    upd(me,function(p){p.status="Dibatalkan";p.catatan=reason});
+    $("reason").textContent=reason;
+    show("fail");
+  }
+
+  document.addEventListener("visibilitychange",function(){if(exam&&document.hidden)fail("Kamu berpindah tab atau aplikasi saat ujian.")});
+  window.addEventListener("blur",function(){if(exam&&Date.now()>grace)fail("Halaman ujian kehilangan fokus (ada aplikasi atau jendela lain dibuka).")});
+  document.addEventListener("fullscreenchange",function(){if(exam&&!document.fullscreenElement&&Date.now()>grace)fail("Kamu keluar dari mode layar penuh.")});
+  window.addEventListener("beforeunload",function(e){if(exam){e.preventDefault();e.returnValue=""}});
+  ["copy","cut","paste","contextmenu","selectstart","dragstart"].forEach(function(ev){document.addEventListener(ev,function(e){if(exam)e.preventDefault()})});
+  document.addEventListener("keydown",function(e){if(exam&&(e.ctrlKey||e.metaKey)&&/^[cvxpsua]$/i.test(e.key))e.preventDefault()});
+
+  $("again").onclick=function(){show("reg")};
+  $("exit").onclick=function(){show("bye");try{window.close()}catch(e){}};
+
+  var stale=null;try{stale=localStorage.getItem(K.act)}catch(e){}
+  if(stale){
+    setAct(false);
+    upd(stale,function(p){p.status="Dibatalkan";p.catatan="Halaman ditutup atau dimuat ulang saat ujian."});
+    $("reason").textContent="Halaman ditutup atau dimuat ulang saat ujian berlangsung.";
+    show("fail");
+  }else show("reg");
+})();
+</script>
+</body>
+  </html>
+  
